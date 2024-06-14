@@ -16,6 +16,7 @@
 
 #include <iio/iio.h>
 #include <string>
+#include "libiiopp_export.h"
 
 #define IIOPP_HAVE_STD_OPIONAL (__cplusplus >= 201703L || _MSC_VER >= 1910)
 
@@ -75,7 +76,7 @@ class Buffer;
  * Provides implicit conversion of std::string while still retaining efficient pass-through for <tt>char const*</tt>.
  * Only valid as long as the original string is valid.
  */
-class cstr
+class IIOPP_EXPORT cstr
 {
     char const * const s;
 public:
@@ -89,7 +90,7 @@ public:
 
 /** @brief Thrown to report errors.
  */
-class error : public std::system_error
+class IIOPP_EXPORT error : public std::system_error
 {
 public:
     using std::system_error::system_error;
@@ -206,7 +207,7 @@ public:
 
 /** @brief C++ wrapper for the @ref Attributes C-API
  */
-class Attr
+class IIOPP_EXPORT Attr
 {
     iio_attr const * p;
 public:
@@ -307,7 +308,7 @@ optional<Attr> attr(obj_T const * obj, unsigned int index)
 @tparam deleter_T Function that must be used for destroying objects
 */
 template <class obj_T, class ptr_T, void deleter_T(ptr_T *)>
-class Ptr
+class IIOPP_EXPORT Ptr
 {
     obj_T p;
 public:
@@ -334,7 +335,7 @@ public:
 
 /** @brief C++ wrapper for @ref iio_channels_mask
  */
-class ChannelsMask
+class IIOPP_EXPORT ChannelsMask
 {
     iio_channels_mask const * const p;
 public:
@@ -346,14 +347,11 @@ public:
 
 typedef Ptr<ChannelsMask, iio_channels_mask, iio_channels_mask_destroy> ChannelsMaskPtr;
 
-ChannelsMaskPtr create_channels_mask(unsigned int nb_channels)
-{
-    return ChannelsMaskPtr(iio_create_channels_mask(nb_channels));
-}
+IIOPP_EXPORT ChannelsMaskPtr create_channels_mask(unsigned int nb_channels);
 
 /** @brief C++ wrapper for the @ref Block C-API
  */
-class Block
+class IIOPP_EXPORT Block
 {
     iio_block * const p;
 public:
@@ -381,7 +379,7 @@ typedef Ptr<Block, iio_block, iio_block_destroy> BlockPtr;
 
 /** @brief C++ wrapper for the @ref Channel C-API
  */
-class Channel
+class IIOPP_EXPORT Channel
 {
     iio_channel * const p;
 public:
@@ -428,7 +426,7 @@ public:
 
 /** @brief C++ wrapper for the @ref Stream C-API
  */
-class Stream
+class IIOPP_EXPORT Stream
 {
     iio_stream * const p;
 public:
@@ -445,7 +443,7 @@ typedef Ptr<Stream, iio_stream, iio_stream_destroy> StreamPtr;
 /**
 @brief Event object
 */
-struct Event : public iio_event
+struct IIOPP_EXPORT Event : public iio_event
 {
     iio_event_type type() const { return iio_event_get_type(this);}
     iio_event_direction direction() const { return iio_event_get_direction(this);}
@@ -454,7 +452,7 @@ struct Event : public iio_event
 
 /** @brief C++ wrapper for @ref iio_event_stream
  */
-class EventStream
+class IIOPP_EXPORT EventStream
 {
     iio_event_stream * const p;
 public:
@@ -471,7 +469,7 @@ typedef Ptr<EventStream, iio_event_stream, iio_event_stream_destroy> EventStream
 
 /** @brief C++ wrapper for the @ref Buffer C-API
  */
-class Buffer
+class IIOPP_EXPORT Buffer
 {
     iio_buffer * const p;
 public:
@@ -509,7 +507,7 @@ typedef Ptr<Buffer, iio_buffer, iio_buffer_destroy> BufferPtr;
 
 /** @brief C++ wrapper for the @ref Device C-API
  */
-class Device : public impl::IndexedSequence<Device, Channel>
+class IIOPP_EXPORT Device : public impl::IndexedSequence<Device, Channel>
 {
     iio_device * const p;
 public:
@@ -586,7 +584,7 @@ typedef Ptr<cstr, void, free> CstrPtr;
 
 /** @brief C++ wrapper for the @ref Context C-API
  */
-class Context : public impl::IndexedSequence<Context, Device>
+class IIOPP_EXPORT Context : public impl::IndexedSequence<Context, Device>
 {
     iio_context * const p;
 public:
@@ -640,6 +638,9 @@ public:
 
 typedef Ptr<Context, iio_context, iio_context_destroy> ContextPtr;
 
+IIOPP_EXPORT ContextPtr create_context(iio_context_params * params, const char * uri);
+
+
 inline Buffer Block::buffer() {return iio_block_get_buffer(p);}
 inline Context Device::context(){return const_cast<iio_context*>(iio_device_get_context(p));}
 inline Device Channel::device() const {return const_cast<iio_device*>(iio_channel_get_device(p));}
@@ -647,16 +648,9 @@ inline Device Buffer::device()  {return const_cast<iio_device*>(iio_buffer_get_d
 inline size_t Channel::read(Block block, void * dst, size_t len, bool raw) const {return iio_channel_read(p, block, dst, len, raw);} // Flawfinder: ignore
 inline size_t Channel::write(Block block, void const * src, size_t len, bool raw) {return iio_channel_write(p, block, src, len, raw);}
 
-/** @brief C++ wrapper for @ref iio_create_context
- */
-inline ContextPtr create_context(iio_context_params * params, const char * uri)
-{
-    return ContextPtr{impl::check(iio_create_context(params, uri), "iio_create_context")};
-}
-
 class Scan;
 
-class ScanResult
+class IIOPP_EXPORT ScanResult
 {
     struct iio_scan const * const p;
     size_t const idx;
@@ -671,7 +665,7 @@ public:
 
 /** @brief C++ wrapper for the @ref Scan C-API
  */
-class Scan : public impl::IndexedSequence<Scan, ScanResult>
+class IIOPP_EXPORT Scan : public impl::IndexedSequence<Scan, ScanResult>
 {
     struct iio_scan const * const p;
 public:
@@ -694,33 +688,12 @@ public:
 
 typedef Ptr<Scan, struct iio_scan, iio_scan_destroy> ScanPtr;
 
-ScanPtr scan(struct iio_context_params const * params, char const * backends)
-{
-    return ScanPtr(impl::check(iio_scan(params, backends), "iio_scan"));
-}
-
+IIOPP_EXPORT ScanPtr scan(struct iio_context_params const * params, char const * backends);
 
 /** @brief Reads the value of a channel by using "input" or "raw" attribute and applying "scale" and "offset" if available
  *
  * @see @c get_channel_value in the example @ref iio-monitor.c
  */
-inline double value(Channel ch)
-{
-    if (auto att = ch.find_attr("input"))
-        return att->read_double() / 1000;
-
-    double scale = 1;
-    if (auto att = ch.find_attr("scale"))
-        scale = att->read_double();
-
-    double offset = 0;
-    if (auto att = ch.find_attr("offset"))
-        offset = att->read_double();
-
-    if (auto att = ch.find_attr("raw"))
-        return (att->read_double() + offset) * scale / 1000.;
-
-    impl::err(ENOENT, "channel does not provide raw value");
-}
+IIOPP_EXPORT double value(Channel ch);
 
 } // namespace iiopp
